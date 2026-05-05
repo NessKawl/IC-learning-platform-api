@@ -33,4 +33,10 @@ export class UsuarioService {
     async findAllUsers(): Promise<usu_usuario[]> {
         return this.prismaService.usu_usuario.findMany()
     }
+
+    async findOneByEmail(usu_email: string) {
+        return this.prismaService.usu_usuario.findUnique({
+            where: { usu_email }
+        })
+    }
 }

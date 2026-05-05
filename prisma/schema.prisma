@@ -31,7 +31,7 @@ model tiu_tipo_usuario {
 model usu_usuario {
   usu_id    Int      @id @default(autoincrement())
   usu_nome  String
-  usu_email String
+  usu_email String   @unique
   usu_senha String
   tiu_id    Int
   createdAt DateTime @default(now())

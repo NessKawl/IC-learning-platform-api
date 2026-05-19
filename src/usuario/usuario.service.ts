@@ -10,7 +10,6 @@ export class UsuarioService {
     constructor(private readonly prismaService: PrismaService) { }
 
     async createUser(data: CreateUserDto): Promise<usu_usuario> {
-
         const usuarioExistente = await this.prismaService.usu_usuario.findUnique({
             where: { usu_email: data.usu_email }
         });
@@ -21,13 +20,19 @@ export class UsuarioService {
 
         const hashPassword = await bcrypt.hash(data.usu_senha, 10);
 
-
         return this.prismaService.usu_usuario.create({
             data: {
-                ...data,
-                usu_senha: hashPassword
+                usu_nome: data.usu_nome,
+                usu_email: data.usu_email,
+                usu_senha: hashPassword,
+
+                tiu_tipo_usuario: {
+                    connect: {
+                        tiu_id: 2
+                    }
+                }
             }
-        })
+        });
     }
 
     async findAllUsers(): Promise<usu_usuario[]> {

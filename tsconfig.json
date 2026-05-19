@@ -16,7 +16,8 @@
     "baseUrl": "./",
     "types": [
       "jest",
-      "node"
+      "node",
+      "multer"
     ],
     "incremental": true,
     "skipLibCheck": true,

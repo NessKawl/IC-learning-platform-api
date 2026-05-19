@@ -50,6 +50,7 @@ model cur_curso {
   cur_titulo    String
   cur_descricao String
   professor_id  Int
+  cur_capa_url  String
 
   usu_usuario usu_usuario @relation(fields: [professor_id], references: [usu_id])
 
@@ -62,7 +63,7 @@ model mod_modulo {
   mod_id        Int    @id @default(autoincrement())
   mod_titulo    String
   mod_descricao String
-  cur_id        Int
+  cur_id        Int 
 
   cur_curso cur_curso @relation(fields: [cur_id], references: [cur_id])
 

@@ -28,7 +28,7 @@ export class UsuarioService {
 
                 tiu_tipo_usuario: {
                     connect: {
-                        tiu_id: 2
+                        tiu_id: 1
                     }
                 }
             }

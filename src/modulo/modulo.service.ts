@@ -16,5 +16,18 @@ export class ModuloService {
     async findAllModules() {
         return this.prismaService.mod_modulo.findMany();
     }
+    
+    async findModulesByCourse(
+        cur_id: number
+    ) {
 
+        return this.prismaService.mod_modulo.findMany({
+            where: {
+                cur_id,
+            },
+            orderBy: {
+                mod_id: 'asc',
+            },
+        });
+    }
 }

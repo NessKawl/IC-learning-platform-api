@@ -8,9 +8,10 @@ import { CursoModule } from './curso/curso.module.js';
 import { ModuloModule } from './modulo/modulo.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AreaCandidatoModule } from './area-candidato/area-candidato.module.js';
+import { MatriculaModule } from './matricula/matricula.module.js';
 
 @Module({
-  imports: [PrismaModule, UsuarioModule, MaterialModule, CursoModule, ModuloModule, AuthModule, AreaCandidatoModule],
+  imports: [PrismaModule, UsuarioModule, MaterialModule, CursoModule, ModuloModule, AuthModule, AreaCandidatoModule, MatriculaModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -56,15 +56,17 @@ export class CursoService {
     async findCursoById(id: number) {
         return this.prismaService.cur_curso.findUnique({
             where: {
-                cur_id: id,
+                cur_id: Number(id),
             },
-
             include: {
                 modulos: {
                     include: {
                         materais: {
                             include: {
                                 tim_tipo_matarial: true,
+                            },
+                            orderBy: {
+                                mat_ordem: 'asc',
                             },
                         },
                     },

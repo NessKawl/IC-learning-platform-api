@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsInt } from 'class-validator';
+import { IsEmail, IsString, IsInt, IsNumber } from 'class-validator';
 
 export class createCursoDto {
 
@@ -11,6 +11,18 @@ export class createCursoDto {
     @IsString()
     cur_capa_url!: string
 
-    @IsInt()
-    professor_id!: number
+    @IsString()
+    cur_publico!: string
+
+    @IsString()
+    cur_n_modulos!: string
+
+    @IsString()
+    cur_conteudo_modulos!: string
+
+    @IsString()
+    cur_carga_horaria_modulos!: string
+    
+    @IsString()
+    cur_forma_avaliacao!: string
 }   

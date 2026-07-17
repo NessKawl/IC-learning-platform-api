@@ -1,14 +1,155 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model tiu_tipo_usuario {
+  tiu_id   Int           @id @default(autoincrement())
+  tiu_nome String
+  usuarios usu_usuario[]
+}
+
+model usu_usuario {
+  usu_id           Int              @id @default(autoincrement())
+  usu_nome         String
+  usu_email        String           @unique
+  usu_senha        String
+  tiu_id           Int
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  usu_proposta     String?
+  usu_status       usuStatus        @default(ATIVO)
+  usu_curriculo    String?
+  usu_lattes       String?
+  cur_curso        cur_curso[]
+  macMatriculas    mac_matricula[]
+  tenTentativas    ten_tentativa[]
+  tiu_tipo_usuario tiu_tipo_usuario @relation(fields: [tiu_id], references: [tiu_id])
+}
+
+model cur_curso {
+  cur_id                    Int             @id @default(autoincrement())
+  cur_titulo                String
+  cur_descricao             String
+  professor_id              Int
+  cur_capa_url              String
+  cur_status                CurStatus       @default(PENDENTE)
+  cur_publico               String?
+  cur_n_modulos             String?
+  cur_conteudo_modulos      String?
+  cur_carga_horaria_modulos String?
+  cur_forma_avaliacao       String?
+  avaliacaoes               ava_avaliacao[]
+  usu_usuario               usu_usuario     @relation(fields: [professor_id], references: [usu_id])
+  macMatriculas             mac_matricula[]
+  modulos                   mod_modulo[]
+}
+
+model mod_modulo {
+  mod_id        Int            @id @default(autoincrement())
+  mod_titulo    String
+  mod_descricao String
+  cur_id        Int
+  materais      mat_material[]
+  cur_curso     cur_curso      @relation(fields: [cur_id], references: [cur_id])
+}
+
+model tim_tipo_matarial {
+  tim_id    Int            @id @default(autoincrement())
+  tim_nome  String
+  materiais mat_material[]
+}
+
+model mat_material {
+  mat_id            Int               @id @default(autoincrement())
+  mat_titulo        String
+  mat_url           String
+  mat_ordem         Int
+  mod_id            Int
+  tim_id            Int
+  mod_modulo        mod_modulo        @relation(fields: [mod_id], references: [mod_id])
+  tim_tipo_matarial tim_tipo_matarial @relation(fields: [tim_id], references: [tim_id])
+  progresso         pro_progresso[]
+}
+
+model pro_progresso {
+  pro_id Int @id @default(autoincrement())
+
+  mac_id Int
+  mat_id Int
+
+  concluidoEm DateTime @default(now())
+
+  matricula mac_matricula @relation(fields: [mac_id], references: [mac_id])
+  material  mat_material @relation(fields: [mat_id], references: [mat_id])
+
+  @@unique([mac_id, mat_id])
+}
+
+model ava_avaliacao {
+  ava_id           Int             @id @default(autoincrement())
+  ava_titulo       String
+  ava_tipo         avaTipo
+  ava_tempo_limite Int
+  proctoring       Boolean
+  cur_id           Int
+  cur_curso        cur_curso       @relation(fields: [cur_id], references: [cur_id])
+  questoes         que_questao[]
+  tenTentativas    ten_tentativa[]
+}
+
+model que_questao {
+  que_id        Int               @id @default(autoincrement())
+  que_texto     String
+  que_tipo      queTipo
+  ava_id        Int
+  alternativa   alt_alternativa[]
+  ava_avaliacao ava_avaliacao     @relation(fields: [ava_id], references: [ava_id])
+  resRespostas  res_resposta[]
+}
+
+model alt_alternativa {
+  alt_id      Int         @id @default(autoincrement())
+  alt_texto   String
+  que_id      Int
+  alt_correta Boolean
+  que_questao que_questao @relation(fields: [que_id], references: [que_id])
+}
+
+model ten_tentativa {
+  ten_id         Int            @id @default(autoincrement())
+  ten_nota       Float
+  ten_dataInicio DateTime       @default(now())
+  ten_dataFim    DateTime
+  ava_id         Int
+  usu_id         Int
+  resRespostas   res_resposta[]
+  ava_avaliacao  ava_avaliacao  @relation(fields: [ava_id], references: [ava_id])
+  usu_usuario    usu_usuario    @relation(fields: [usu_id], references: [usu_id])
+}
+
+model res_resposta {
+  res_id        Int           @id @default(autoincrement())
+  res_texto     String?
+  ten_id        Int
+  que_id        Int
+  alt_id        Int?
+  que_questao   que_questao   @relation(fields: [que_id], references: [que_id])
+  ten_tentativa ten_tentativa @relation(fields: [ten_id], references: [ten_id])
+}
+
+model mac_matricula {
+  mac_id        Int         @id @default(autoincrement())
+  mac_data      DateTime    @default(now())
+  mac_progresso Float
+  usu_id        Int
+  cur_id        Int
+  cur_curso     cur_curso   @relation(fields: [cur_id], references: [cur_id])
+  usu_usuario   usu_usuario @relation(fields: [usu_id], references: [usu_id])
+  pro_progresso pro_progresso[]
 }
 
 enum avaTipo {
@@ -21,149 +162,16 @@ enum queTipo {
   OBJETIVA
 }
 
-model tiu_tipo_usuario {
-  tiu_id   Int    @id @default(autoincrement())
-  tiu_nome String
-
-  usuarios usu_usuario[]
+enum usuStatus {
+  PENDENTE
+  ATIVO
+  INATIVO
+  REJEITADO
 }
 
-model usu_usuario {
-  usu_id    Int      @id @default(autoincrement())
-  usu_nome  String
-  usu_email String   @unique
-  usu_senha String
-  tiu_id    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tiu_tipo_usuario tiu_tipo_usuario @relation(fields: [tiu_id], references: [tiu_id])
-
-  cur_curso     cur_curso[]
-  pro_progresso pro_progresso[]
-  tenTentativas ten_tentativa[]
-  macMatriculas mac_matricula[]
-}
-
-model cur_curso {
-  cur_id        Int    @id @default(autoincrement())
-  cur_titulo    String
-  cur_descricao String
-  professor_id  Int
-  cur_capa_url  String
-
-  usu_usuario usu_usuario @relation(fields: [professor_id], references: [usu_id])
-
-  modulos       mod_modulo[]
-  avaliacaoes   ava_avaliacao[]
-  macMatriculas mac_matricula[]
-}
-
-model mod_modulo {
-  mod_id        Int    @id @default(autoincrement())
-  mod_titulo    String
-  mod_descricao String
-  cur_id        Int 
-
-  cur_curso cur_curso @relation(fields: [cur_id], references: [cur_id])
-
-  materais mat_material[]
-}
-
-model tim_tipo_matarial {
-  tim_id   Int    @id @default(autoincrement())
-  tim_nome String
-
-  materiais mat_material[]
-}
-
-model mat_material {
-  mat_id     Int    @id @default(autoincrement())
-  mat_titulo String
-  mat_url    String
-  mat_ordem  Int
-  mod_id     Int
-  tim_id     Int
-
-  mod_modulo        mod_modulo        @relation(fields: [mod_id], references: [mod_id])
-  tim_tipo_matarial tim_tipo_matarial @relation(fields: [tim_id], references: [tim_id])
-  progresso         pro_progresso[]
-}
-
-model pro_progresso {
-  pro_id     Int    @id @default(autoincrement())
-  pro_status String
-  usu_id     Int
-  mat_id     Int
-
-  usu_usuario  usu_usuario  @relation(fields: [usu_id], references: [usu_id])
-  mat_material mat_material @relation(fields: [mat_id], references: [mat_id])
-}
-
-model ava_avaliacao {
-  ava_id           Int     @id @default(autoincrement())
-  ava_titulo       String
-  ava_tipo         avaTipo
-  ava_tempo_limite Int
-  proctoring       Boolean
-  cur_id           Int
-
-  cur_curso     cur_curso       @relation(fields: [cur_id], references: [cur_id])
-  questoes      que_questao[]
-  tenTentativas ten_tentativa[]
-}
-
-model que_questao {
-  que_id    Int     @id @default(autoincrement())
-  que_texto String
-  que_tipo  queTipo
-  ava_id    Int
-
-  ava_avaliacao ava_avaliacao     @relation(fields: [ava_id], references: [ava_id])
-  alternativa   alt_alternativa[]
-  resRespostas  res_resposta[]
-}
-
-model alt_alternativa {
-  alt_id      Int     @id @default(autoincrement())
-  alt_texto   String
-  que_id      Int
-  alt_correta Boolean
-
-  que_questao que_questao @relation(fields: [que_id], references: [que_id])
-}
-
-model ten_tentativa {
-  ten_id         Int      @id @default(autoincrement())
-  ten_nota       Float
-  ten_dataInicio DateTime @default(now())
-  ten_dataFim    DateTime
-  ava_id         Int
-  usu_id         Int
-
-  ava_avaliacao ava_avaliacao  @relation(fields: [ava_id], references: [ava_id])
-  usu_usuario   usu_usuario    @relation(fields: [usu_id], references: [usu_id])
-  resRespostas  res_resposta[]
-}
-
-model res_resposta {
-  res_id    Int     @id @default(autoincrement())
-  res_texto String?
-  ten_id    Int
-  que_id    Int
-  alt_id    Int?
-
-  ten_tentativa ten_tentativa @relation(fields: [ten_id], references: [ten_id])
-  que_questao   que_questao   @relation(fields: [que_id], references: [que_id])
-}
-
-model mac_matricula {
-  mac_id        Int      @id @default(autoincrement())
-  mac_data      DateTime @default(now())
-  mac_progresso Float
-  usu_id        Int
-  cur_id        Int
-
-  usu_usuario usu_usuario @relation(fields: [usu_id], references: [usu_id])
-  cur_curso   cur_curso   @relation(fields: [cur_id], references: [cur_id])
+enum CurStatus {
+  PENDENTE
+  REJEITADO
+  ATIVO
+  INATIVO
 }

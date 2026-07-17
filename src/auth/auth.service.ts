@@ -22,7 +22,7 @@ export class AuthService {
 
         const isPasswordValid = await bcrypt.compare(senhaRecebida, user.usu_senha)
 
-        if (isPasswordValid) {
+        if (isPasswordValid && user.usu_status === 'ATIVO') {
             console.log("SUCESSO: Usuário validado!");
             const { usu_senha, ...result } = user
             return result;

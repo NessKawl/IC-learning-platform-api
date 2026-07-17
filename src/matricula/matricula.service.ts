@@ -56,6 +56,21 @@ export class MatriculaService {
         return {
             matriculado: true,
             progresso: matricula.mac_progresso ?? 0,
+            mac_id: matricula.mac_id,
+        };
+    }
+
+    async contarAlunosProfessor(professorId: number) {
+        const total = await this.prismaService.mac_matricula.count({
+            where: {
+                cur_curso: {
+                    professor_id: professorId, // id do professor dono do curso
+                },
+            },
+        });
+
+        return {
+            totalAlunos: total,
         };
     }
 }

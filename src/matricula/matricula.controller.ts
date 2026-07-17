@@ -41,4 +41,15 @@ export class MatriculaController {
             Number(cur_id)
         );
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('professor/alunos')
+    async contarAlunosProfessor(
+        @Request() req,
+    ) {
+        return this.matriculaService
+            .contarAlunosProfessor(
+                req.user.usu_id
+            );
+    }
 }

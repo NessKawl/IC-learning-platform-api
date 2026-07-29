@@ -25,55 +25,84 @@ export class CursoService {
 
     async createCurso(
         data: createCursoDto,
-        file: Express.Multer.File,
-        usuarioId: number
+
+        capa: Express.Multer.File,
+
+        conteudoModulo: Express.Multer.File,
+
+        usuarioId: number,
     ) {
 
-        const fileName =
-            `cursos/capas/${uuidv4()}-${file.originalname}`;
+        const capaName =
+            `cursos/capas/${uuidv4()}-${capa.originalname}`;
 
         await s3.send(
             new PutObjectCommand({
-                Bucket:
-                    process.env
-                        .AWS_BUCKET_NAME,
 
-                Key:
-                    fileName,
+                Bucket: process.env.AWS_BUCKET_NAME,
 
-                Body:
-                    file.buffer,
+                Key: capaName,
 
-                ContentType:
-                    file.mimetype,
+                Body: capa.buffer,
+
+                ContentType: capa.mimetype,
+
             }),
         );
 
         const imageUrl =
-            `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+            `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${capaName}`;
+
+        let moduloUrl = "";
+
+        if (conteudoModulo) {
+
+            const moduloName =
+                `cursos/modulos/${uuidv4()}-${conteudoModulo.originalname}`;
+
+            await s3.send(
+
+                new PutObjectCommand({
+
+                    Bucket:
+                        process.env.AWS_BUCKET_NAME,
+
+                    Key:
+                        moduloName,
+
+                    Body:
+                        conteudoModulo.buffer,
+
+                    ContentType:
+                        conteudoModulo.mimetype,
+
+                }),
+
+            );
+
+            moduloUrl =
+                `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${moduloName}`;
+
+        }
 
         return this.prismaService.cur_curso.create({
+
             data: {
-                cur_titulo:
-                    data.cur_titulo,
 
-                cur_descricao:
-                    data.cur_descricao,
+                cur_titulo: data.cur_titulo,
 
-                professor_id:
-                    usuarioId,
+                cur_descricao: data.cur_descricao,
 
-                cur_capa_url:
-                    imageUrl,
+                professor_id: usuarioId,
 
-                cur_publico:
-                    data.cur_publico,
+                cur_capa_url: imageUrl,
+
+                cur_conteudo_modulos: moduloUrl,
+
+                cur_publico: data.cur_publico,
 
                 cur_carga_horaria_modulos:
                     data.cur_carga_horaria_modulos,
-
-                cur_conteudo_modulos:
-                    data.cur_conteudo_modulos,
 
                 cur_n_modulos:
                     data.cur_n_modulos,
@@ -81,9 +110,10 @@ export class CursoService {
                 cur_forma_avaliacao:
                     data.cur_forma_avaliacao,
 
-                cur_status:
-                    'PENDENTE',
+                cur_status: "PENDENTE",
+
             },
+
         });
     }
 
@@ -99,34 +129,103 @@ export class CursoService {
     }
 
     async findCursoById(
-        id: number
+        id: number,
+        usuarioId: number,
     ) {
-        return this.prismaService
-            .cur_curso
-            .findUnique({
-                where: {
-                    cur_id:
-                        Number(id),
-                },
+        const curso = await this.prismaService.cur_curso.findUnique({
+            where: {
+                cur_id: Number(id),
+            },
 
-                include: {
-                    modulos: {
-                        include: {
-                            materais: {
-                                include: {
-                                    tim_tipo_matarial:
-                                        true,
-                                },
+            include: {
+                modulos: {
+                    include: {
 
-                                orderBy: {
-                                    mat_ordem:
-                                        'asc',
+                        materais: {
+                            include: {
+                                tim_tipo_matarial: true,
+                            },
+                            orderBy: {
+                                mat_ordem: "asc",
+                            },
+                        },
+
+                        avaliacao: {
+                            include: {
+                                tenTentativas: {
+
+                                    where: {
+                                        usu_id: usuarioId,
+                                        ten_concluida: true,
+                                    },
+
+                                    orderBy: {
+                                        ten_dataFim: "desc",
+                                    },
+
+                                    take: 1,
+
+                                    select: {
+                                        ten_nota: true,
+                                        ten_acertos: true,
+                                    },
+
                                 },
                             },
                         },
+
                     },
                 },
-            });
+            },
+        });
+
+
+        if (!curso) {
+            return null;
+        }
+
+
+        return {
+            ...curso,
+
+            modulos: curso.modulos.map((modulo) => {
+
+                if (!modulo.avaliacao) {
+                    return modulo;
+                }
+
+
+                const tentativa =
+                    modulo.avaliacao.tenTentativas[0];
+
+
+                return {
+                    ...modulo,
+
+                    avaliacao: {
+
+                        ava_id:
+                            modulo.avaliacao.ava_id,
+
+                        ava_titulo:
+                            modulo.avaliacao.ava_titulo,
+
+                        respondida:
+                            !!tentativa,
+
+                        nota:
+                            tentativa?.ten_nota ?? null,
+
+                        acertos:
+                            tentativa?.ten_acertos ?? null,
+
+                    },
+
+                };
+
+            }),
+
+        };
     }
 
     async getCursosPorUsuario(
@@ -212,6 +311,21 @@ export class CursoService {
                 data: {
                     cur_status:
                         'REJEITADO',
+                },
+            });
+    }
+
+    findCursoByTitulo(
+        titulo: string
+    ) {
+        return this.prismaService
+            .cur_curso.findMany({
+                where: {
+                    cur_titulo: {
+                        contains: titulo,
+                        mode: 'insensitive',
+                    },
+                    cur_status: 'ATIVO',
                 },
             });
     }

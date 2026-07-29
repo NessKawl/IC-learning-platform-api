@@ -155,4 +155,27 @@ export class UsuarioService {
             },
         });
     }
+
+    async getEstatisticas() {
+        const alunos = await this.prismaService.usu_usuario.count({
+            where: {
+                tiu_tipo_usuario: {
+                    tiu_nome: "ALUNO"
+                }
+            },
+        });
+
+        const professores = await this.prismaService.usu_usuario.count({
+            where: {
+                tiu_tipo_usuario: {
+                    tiu_nome: "PROFESSOR"
+                }
+            },
+        });
+
+        return {
+            alunos,
+            professores,
+        };
+    } F
 }

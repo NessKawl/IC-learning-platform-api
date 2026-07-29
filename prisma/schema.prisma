@@ -42,19 +42,21 @@ model cur_curso {
   cur_conteudo_modulos      String?
   cur_carga_horaria_modulos String?
   cur_forma_avaliacao       String?
-  avaliacaoes               ava_avaliacao[]
   usu_usuario               usu_usuario     @relation(fields: [professor_id], references: [usu_id])
   macMatriculas             mac_matricula[]
   modulos                   mod_modulo[]
 }
 
 model mod_modulo {
-  mod_id        Int            @id @default(autoincrement())
+  mod_id        Int    @id @default(autoincrement())
   mod_titulo    String
   mod_descricao String
   cur_id        Int
-  materais      mat_material[]
-  cur_curso     cur_curso      @relation(fields: [cur_id], references: [cur_id])
+
+  materais  mat_material[]
+  avaliacao ava_avaliacao?
+
+  cur_curso cur_curso @relation(fields: [cur_id], references: [cur_id])
 }
 
 model tim_tipo_matarial {
@@ -84,21 +86,25 @@ model pro_progresso {
   concluidoEm DateTime @default(now())
 
   matricula mac_matricula @relation(fields: [mac_id], references: [mac_id])
-  material  mat_material @relation(fields: [mat_id], references: [mat_id])
+  material  mat_material  @relation(fields: [mat_id], references: [mat_id])
 
   @@unique([mac_id, mat_id])
 }
 
 model ava_avaliacao {
-  ava_id           Int             @id @default(autoincrement())
+  ava_id Int @id @default(autoincrement())
+
   ava_titulo       String
   ava_tipo         avaTipo
   ava_tempo_limite Int
   proctoring       Boolean
-  cur_id           Int
-  cur_curso        cur_curso       @relation(fields: [cur_id], references: [cur_id])
-  questoes         que_questao[]
-  tenTentativas    ten_tentativa[]
+
+  mod_id Int @unique
+
+  modulo mod_modulo @relation(fields: [mod_id], references: [mod_id])
+
+  questoes      que_questao[]
+  tenTentativas ten_tentativa[]
 }
 
 model que_questao {
@@ -109,6 +115,7 @@ model que_questao {
   alternativa   alt_alternativa[]
   ava_avaliacao ava_avaliacao     @relation(fields: [ava_id], references: [ava_id])
   resRespostas  res_resposta[]
+  tenQuestaos   ten_questao[]
 }
 
 model alt_alternativa {
@@ -120,15 +127,32 @@ model alt_alternativa {
 }
 
 model ten_tentativa {
-  ten_id         Int            @id @default(autoincrement())
-  ten_nota       Float
-  ten_dataInicio DateTime       @default(now())
-  ten_dataFim    DateTime
-  ava_id         Int
-  usu_id         Int
-  resRespostas   res_resposta[]
-  ava_avaliacao  ava_avaliacao  @relation(fields: [ava_id], references: [ava_id])
-  usu_usuario    usu_usuario    @relation(fields: [usu_id], references: [usu_id])
+  ten_id             Int      @id @default(autoincrement())
+  ten_nota           Float
+  ten_acertos        Int
+  ten_total_questoes Int
+  ten_concluida      Boolean  @default(false)
+  ten_dataInicio     DateTime @default(now())
+  ten_dataFim        DateTime
+  ava_id             Int
+  usu_id             Int
+
+  resRespostas  res_resposta[]
+  ava_avaliacao ava_avaliacao  @relation(fields: [ava_id], references: [ava_id])
+  usu_usuario   usu_usuario    @relation(fields: [usu_id], references: [usu_id])
+  tenQuestaos   ten_questao[]
+}
+
+model ten_questao {
+  tq_id Int @id @default(autoincrement())
+
+  ten_id Int
+  que_id Int
+
+  tentativa ten_tentativa @relation(fields: [ten_id], references: [ten_id])
+  questao   que_questao   @relation(fields: [que_id], references: [que_id])
+
+  @@unique([ten_id, que_id])
 }
 
 model res_resposta {
@@ -142,13 +166,13 @@ model res_resposta {
 }
 
 model mac_matricula {
-  mac_id        Int         @id @default(autoincrement())
-  mac_data      DateTime    @default(now())
+  mac_id        Int             @id @default(autoincrement())
+  mac_data      DateTime        @default(now())
   mac_progresso Float
   usu_id        Int
   cur_id        Int
-  cur_curso     cur_curso   @relation(fields: [cur_id], references: [cur_id])
-  usu_usuario   usu_usuario @relation(fields: [usu_id], references: [usu_id])
+  cur_curso     cur_curso       @relation(fields: [cur_id], references: [cur_id])
+  usu_usuario   usu_usuario     @relation(fields: [usu_id], references: [usu_id])
   pro_progresso pro_progresso[]
 }
 

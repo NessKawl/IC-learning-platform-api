@@ -9,10 +9,14 @@ import {
     UploadedFile,
     UseInterceptors,
     UseGuards,
+    BadRequestException,
+    Req,
 } from '@nestjs/common';
 
-import { FileInterceptor } from '@nestjs/platform-express';
-
+import {
+    FileFieldsInterceptor
+} from "@nestjs/platform-express";
+import { UploadedFiles } from "@nestjs/common";
 import { CursoService } from './curso.service.js';
 import { createCursoDto } from './dto/create-curso.dto.js';
 
@@ -27,32 +31,55 @@ export class CursoController {
             CursoService
     ) { }
 
-    @Post('register')
-    @UseGuards(
-        JwtAuthGuard
-    )
+    @Post("register")
+    @UseGuards(JwtAuthGuard)
     @UseInterceptors(
-        FileInterceptor('file')
+        FileFieldsInterceptor([
+            {
+                name: "file",
+                maxCount: 1,
+            },
+            {
+                name: "conteudoModulo",
+                maxCount: 1,
+            },
+        ]),
     )
     async createCurso(
-        @UploadedFile()
-        file: Express.Multer.File,
+
+        @UploadedFiles()
+        files: {
+            file?: Express.Multer.File[];
+            conteudoModulo?: Express.Multer.File[];
+        },
 
         @Body()
         data: createCursoDto,
 
         @CurrentUser()
-        user: any
+        user: any,
     ) {
+        if (!files.file?.length) {
+            throw new BadRequestException("A capa é obrigatória");
+        }
 
-        return this.cursoService
-            .createCurso(
-                data,
-                file,
-                user.usu_id
-            );
+        if (!files.conteudoModulo?.length) {
+            throw new BadRequestException("O conteúdo do módulo é obrigatório");
+        }
+
+        return this.cursoService.createCurso(
+
+            data,
+
+            files.file?.[0],
+
+            files.conteudoModulo[0],
+
+            user.usu_id,
+
+        );
+
     }
-
     @Get('all')
     async findAllCursos() {
 
@@ -125,19 +152,22 @@ export class CursoController {
             );
     }
 
-    // SEMPRE DEIXAR POR ÚLTIMO
-    @Get(':id')
-    async findCursoById(
-        @Param(
-            'id',
-            ParseIntPipe
-        )
-        id: number
-    ) {
-
-        return this.cursoService
-            .findCursoById(
-                id
-            );
+    @Get('/titulo/:titulo')
+    async findCursoByTitulo(
+        @Param('titulo') titulo: string) {
+        return this.cursoService.findCursoByTitulo(titulo);
     }
+
+    @Get(":id")
+    @UseGuards(JwtAuthGuard)
+    findById(
+        @Param("id") id: string,
+        @CurrentUser() user: any,
+    ) {
+        return this.cursoService.findCursoById(
+            Number(id),
+            user.usu_id,
+        );
+    }
+
 }

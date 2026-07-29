@@ -47,4 +47,9 @@ export class UsuarioController {
     rejeitar(@Param('id') id: string) {
         return this.usuarioService.rejeitarUsuario(Number(id));
     }
+
+    @Get("estatisticas")
+    getEstatisticas() {
+        return this.usuarioService.getEstatisticas();
+    }
 }

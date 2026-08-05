@@ -39,14 +39,15 @@ export class AvaliacaoController {
     }
 
     @Get("/tentativa/:id")
-    buscarTentativa(
+    async buscarTentativa(
         @Param("id") id: string,
     ) {
-
-        return this.service.buscarTentativa(
+        const response = await this.service.buscarTentativa(
             Number(id),
         );
 
+        console.log(response);
+        return response;
     }
 
     @Post("tentativa/:id/finalizar")

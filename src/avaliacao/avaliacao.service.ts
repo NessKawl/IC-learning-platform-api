@@ -102,35 +102,36 @@ export class AvaliacaoService {
         usuarioId: number,
     ) {
 
-        const avaliacao =
-            await this.prisma.ava_avaliacao.findUnique({
-
-                where: {
-                    ava_id: avaId,
+        const avaliacao = await this.prisma.ava_avaliacao.findUnique({
+            where: {
+                ava_id: avaId,
+            },
+            include: {
+                modulo: {
+                    select: {
+                        mod_id: true,
+                        mod_titulo: true,
+                        cur_curso: {
+                            select: {
+                                cur_id: true,
+                                cur_titulo: true,
+                            },
+                        },
+                    },
                 },
 
-                include: {
-
-                    questoes: {
-
-                        include: {
-
-                            alternativa: {
-
-                                select: {
-                                    alt_id: true,
-                                    alt_texto: true
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            });
+                questoes: {
+                    include: {
+                        alternativa: {
+                            select: {
+                                alt_id: true,
+                                alt_texto: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
 
         if (!avaliacao)
             throw new NotFoundException();
@@ -182,6 +183,12 @@ export class AvaliacaoService {
 
                 titulo: avaliacao.ava_titulo,
 
+                modulo: avaliacao.mod_id,
+
+                modulo_tiutlo: avaliacao.modulo.mod_titulo,
+
+                curso: avaliacao.modulo.cur_curso.cur_id,
+
                 tempo: avaliacao.ava_tempo_limite,
 
                 questoes
@@ -229,57 +236,45 @@ export class AvaliacaoService {
         id: number,
     ) {
 
-        const tentativa =
-            await this.prisma.ten_tentativa.findUnique({
+        const tentativa = await this.prisma.ten_tentativa.findUnique({
+            where: {
+                ten_id: id,
+            },
 
-                where: {
-                    ten_id: id,
+            include: {
+                ava_avaliacao: {
+                    include: {
+                        modulo: {
+                            select: {
+                                mod_id: true,
+                                mod_titulo: true,
+                                cur_curso: {
+                                    select: {
+                                        cur_id: true,
+                                        cur_titulo: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
                 },
 
-                include: {
-
-                    tenQuestaos: {
-
-                        include: {
-
-                            questao: {
-
-                                include: {
-
-                                    alternativa: {
-
-                                        select: {
-
-                                            alt_id: true,
-                                            alt_texto: true,
-
-                                        }
-
-                                    }
-
-                                }
-
-                            }
-
-                        }
-
+                tenQuestaos: {
+                    include: {
+                        questao: {
+                            include: {
+                                alternativa: {
+                                    select: {
+                                        alt_id: true,
+                                        alt_texto: true,
+                                    },
+                                },
+                            },
+                        },
                     },
-
-                    ava_avaliacao: {
-
-                        select: {
-
-                            ava_titulo: true,
-
-                            ava_tempo_limite: true,
-
-                        }
-
-                    }
-
-                }
-
-            });
+                },
+            },
+        });
 
         if (!tentativa)
             throw new NotFoundException();
@@ -291,6 +286,10 @@ export class AvaliacaoService {
             titulo: tentativa.ava_avaliacao.ava_titulo,
 
             tempo: tentativa.ava_avaliacao.ava_tempo_limite,
+
+            modulo_titulo: tentativa.ava_avaliacao.modulo.mod_titulo,
+
+            curso: tentativa.ava_avaliacao.modulo.cur_curso.cur_id,
 
             questoes: tentativa.tenQuestaos.map(q => q.questao),
 

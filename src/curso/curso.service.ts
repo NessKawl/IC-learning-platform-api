@@ -166,6 +166,7 @@ export class CursoService {
                                     take: 1,
 
                                     select: {
+                                        ten_id: true,
                                         ten_nota: true,
                                         ten_acertos: true,
                                     },
@@ -218,6 +219,9 @@ export class CursoService {
 
                         acertos:
                             tentativa?.ten_acertos ?? null,
+                            
+                        tentativa_id:
+                            tentativa?.ten_id ?? null,
 
                     },
 

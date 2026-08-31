@@ -1,68 +1,163 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    Param,
+    ParseIntPipe,
+    Post,
+    Req,
+    UseGuards,
+} from '@nestjs/common';
+
 import { AvaliacaoService } from './avaliacao.service.js';
-import { CreateAvaliacaoDto, FinalizarProvaDto } from './dto/create-avaliacao.dto.js';
-import { AuthGuard } from '@nestjs/passport';
+import {
+    CreateAvaliacaoDto,
+} from './dto/create-avaliacao.dto.js';
+
 import { JwtAuthGuard } from '../auth/guards/jwt.guards.js';
 
-@Controller("avaliacao")
+@Controller('avaliacao')
 export class AvaliacaoController {
 
     constructor(
         private readonly service: AvaliacaoService
     ) { }
 
-    @Post("register")
+
+    // ==========================================
+    // CRIAR AVALIAÇÃO
+    // ==========================================
+
+    @Post('register')
     create(
-        @Body()
-        dto: CreateAvaliacaoDto
+        @Body() dto: CreateAvaliacaoDto
     ) {
         return this.service.createAvaliacao(dto);
     }
 
+
+    // ==========================================
+    // BUSCAR AVALIAÇÃO
+    // ==========================================
+
     @Get(':id')
     findOne(
-        @Param('id') id: string
+        @Param('id', ParseIntPipe) id: number
     ) {
-        return this.service.findAvaliacaoById(Number(id));
+        return this.service.findAvaliacaoById(id);
     }
 
-    @Post(":avaId/iniciar")
+
+    // ==========================================
+    // INICIAR PROVA
+    // ==========================================
+
+    @Post(':avaId/iniciar')
     @UseGuards(JwtAuthGuard)
     iniciarProva(
-        @Param("avaId") avaId: string,
-        @Req() req,
+        @Param('avaId', ParseIntPipe) avaId: number,
+        @Req() req: any,
     ) {
+
         return this.service.iniciarProva(
-            Number(avaId),
+            avaId,
             req.user.usu_id,
         );
+
     }
 
-    @Get("/tentativa/:id")
+
+    // ==========================================
+    // BUSCAR TENTATIVA
+    // ==========================================
+
+    @Get('tentativa/:id')
+    @UseGuards(JwtAuthGuard)
     async buscarTentativa(
-        @Param("id") id: string,
+        @Param('id', ParseIntPipe) id: number,
+        @Req() req: any,
     ) {
-        const response = await this.service.buscarTentativa(
-            Number(id),
+
+        return this.service.buscarTentativa(id);
+
+    }
+
+    @Get('tentativa/:id/qtd-tentativas')
+    @UseGuards(JwtAuthGuard)
+    async qtdTentativas(
+        @Param('id', ParseIntPipe) id: number,
+        @Req() req: any,
+    ) {
+
+        const usuarioId = req.user.usu_id;
+        return this.service.qtdTentativas(usuarioId, id);
+
+    }
+
+    // ==========================================
+    // RESULTADO DA TENTATIVA
+    // ==========================================
+
+    @Get('resultado/:id')
+    @UseGuards(JwtAuthGuard)
+    async buscarResultado(
+        @Param('id', ParseIntPipe) id: number,
+        @Req() req: any,
+    ) {
+
+        return this.service.buscarResultadoTentativa(id);
+
+    }
+
+
+    // ==========================================
+    // SOLICITAR REVISÃO
+    // ==========================================
+
+    @Post('tentativas/:tentativaId/revisao')
+    @UseGuards(JwtAuthGuard)
+    async solicitarRevisao(
+        @Param('tentativaId', ParseIntPipe)
+        tentativaId: number,
+
+        @Req() req: any,
+    ) {
+
+        const usuarioId = req.user.usu_id;
+
+        return this.service.solicitarRevisao(
+            tentativaId,
+            usuarioId,
         );
 
-        console.log(response);
-        return response;
     }
 
-    @Post("tentativa/:id/finalizar")
+
+    // ==========================================
+    // FINALIZAR PROVA
+    // ==========================================
+
+    @Post('tentativa/:id/finalizar')
+    @UseGuards(JwtAuthGuard)
     finalizar(
-        @Param("id") id: string,
-        @Body() body: {
+        @Param('id', ParseIntPipe) id: number,
+
+        @Body()
+        body: {
             respostas: {
                 que_id: number;
                 alt_id: number;
             }[];
-        }
+        },
+
+        @Req() req: any,
     ) {
+
         return this.service.finalizarTentativa(
-            Number(id),
-            body.respostas
+            id,
+            body.respostas,
         );
+
     }
+
 }

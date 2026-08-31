@@ -13,21 +13,22 @@ model tiu_tipo_usuario {
 }
 
 model usu_usuario {
-  usu_id           Int              @id @default(autoincrement())
-  usu_nome         String
-  usu_email        String           @unique
-  usu_senha        String
-  tiu_id           Int
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  usu_proposta     String?
-  usu_status       usuStatus        @default(ATIVO)
-  usu_curriculo    String?
-  usu_lattes       String?
-  cur_curso        cur_curso[]
-  macMatriculas    mac_matricula[]
-  tenTentativas    ten_tentativa[]
-  tiu_tipo_usuario tiu_tipo_usuario @relation(fields: [tiu_id], references: [tiu_id])
+  usu_id               Int                     @id @default(autoincrement())
+  usu_nome             String
+  usu_email            String                  @unique
+  usu_senha            String
+  tiu_id               Int
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  usu_proposta         String?
+  usu_status           usuStatus               @default(ATIVO)
+  usu_curriculo        String?
+  usu_lattes           String?
+  cur_curso            cur_curso[]
+  macMatriculas        mac_matricula[]
+  tenTentativas        ten_tentativa[]
+  tiu_tipo_usuario     tiu_tipo_usuario        @relation(fields: [tiu_id], references: [tiu_id])
+  revRevisaoAvaliacaos rev_revisao_avaliacao[]
 }
 
 model cur_curso {
@@ -103,8 +104,9 @@ model ava_avaliacao {
 
   modulo mod_modulo @relation(fields: [mod_id], references: [mod_id])
 
-  questoes      que_questao[]
-  tenTentativas ten_tentativa[]
+  questoes             que_questao[]
+  tenTentativas        ten_tentativa[]
+  revRevisaoAvaliacaos rev_revisao_avaliacao[]
 }
 
 model que_questao {
@@ -137,10 +139,11 @@ model ten_tentativa {
   ava_id             Int
   usu_id             Int
 
-  resRespostas  res_resposta[]
-  ava_avaliacao ava_avaliacao  @relation(fields: [ava_id], references: [ava_id])
-  usu_usuario   usu_usuario    @relation(fields: [usu_id], references: [usu_id])
-  tenQuestaos   ten_questao[]
+  resRespostas         res_resposta[]
+  ava_avaliacao        ava_avaliacao           @relation(fields: [ava_id], references: [ava_id])
+  usu_usuario          usu_usuario             @relation(fields: [usu_id], references: [usu_id])
+  tenQuestaos          ten_questao[]
+  revRevisaoAvaliacaos rev_revisao_avaliacao[]
 }
 
 model ten_questao {
@@ -176,6 +179,37 @@ model mac_matricula {
   pro_progresso pro_progresso[]
 }
 
+model rev_revisao_avaliacao {
+  rev_id Int @id @default(autoincrement())
+
+  ten_id Int
+
+  usu_id Int
+
+  ava_id Int
+
+  rev_status revStatus @default(PENDENTE)
+
+  rev_motivo String?
+
+  rev_resposta String?
+
+  rev_data DateTime @default(now())
+
+  rev_data_analise DateTime?
+
+  ten_tentativa ten_tentativa @relation(fields: [ten_id], references: [ten_id])
+
+  usu_usuario usu_usuario @relation(fields: [usu_id], references: [usu_id])
+
+  ava_avaliacao ava_avaliacao @relation(fields: [ava_id], references: [ava_id])
+
+  @@index([usu_id])
+  @@index([ava_id])
+  @@index([ten_id])
+  @@index([rev_status])
+}
+
 enum avaTipo {
   QUIZ
   PROVA
@@ -198,4 +232,12 @@ enum CurStatus {
   REJEITADO
   ATIVO
   INATIVO
+}
+
+enum revStatus {
+  PENDENTE
+
+  APROVADA
+
+  REJEITADA
 }

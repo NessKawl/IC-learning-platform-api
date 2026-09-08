@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Get,
@@ -153,10 +154,40 @@ export class AvaliacaoController {
         @Req() req: any,
     ) {
 
-        return this.service.finalizarTentativa(
-            id,
-            body.respostas,
+        return this.service.finalizarTentativa(id, body.respostas);
+
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get("revisoes/professor")
+    async buscarSolicitacoesProfessor(@Req() req: any) {
+
+        console.log("USUÁRIO AUTENTICADO:", req.user);
+
+        const professorId = req.user.usu_id;
+
+        return this.service.buscarSolicitacoesRevisaoProfessor(
+            professorId
         );
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post("revisoes/:id/aprovar")
+    async aprovarSolicitacao(@Param("id", ParseIntPipe) id: number, @Req() req: any) {
+
+        const professorId = req.user.usu_id;
+
+        return this.service.aprovarSolicitacaoRevisao(id, professorId);
+
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post("revisoes/:id/rejeitar")
+    async rejeitarSolicitacao(@Param("id", ParseIntPipe) id: number, @Req() req: any) {
+
+        const professorId = req.user.usu_id;
+
+        return this.service.rejeitarSolicitacaoRevisao(id, professorId);
 
     }
 

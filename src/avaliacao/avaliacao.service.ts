@@ -1403,28 +1403,44 @@ export class AvaliacaoService {
                 include: {
 
                     ava_avaliacao: {
+
                         include: {
+
                             modulo: {
+
                                 select: {
                                     mod_id: true,
                                     mod_titulo: true,
                                 },
+
                             },
+
                         },
+
                     },
 
                     tenQuestaos: {
+
                         include: {
+
                             questao: {
+
                                 include: {
+
                                     alternativa: true,
+
                                 },
+
                             },
+
                         },
+
                     },
 
                     resRespostas: true,
+
                 },
+
             });
 
 
@@ -1438,20 +1454,50 @@ export class AvaliacaoService {
 
 
         /*
+         * Busca a solicitação de revisão dessa tentativa
+         */
+        const solicitacaoRevisao =
+            await this.prisma.rev_revisao_avaliacao.findFirst({
+
+                where: {
+                    ten_id: tentativaId,
+                },
+
+                orderBy: {
+                    rev_data: "desc",
+                },
+
+                select: {
+
+                    rev_id: true,
+
+                    rev_status: true,
+
+                    rev_motivo: true,
+
+                    rev_resposta: true,
+
+                    rev_data: true,
+
+                    rev_data_analise: true,
+
+                },
+
+            });
+
+
+        /*
          * Monta o resultado de cada questão
          */
-
         const respostas =
             tentativa.tenQuestaos.map((item) => {
-
 
                 /*
                  * Procura a resposta dada pelo aluno
                  */
-
                 const respostaAluno =
                     tentativa.resRespostas.find(
-                        resposta =>
+                        (resposta) =>
                             resposta.que_id === item.que_id
                     );
 
@@ -1459,10 +1505,9 @@ export class AvaliacaoService {
                 /*
                  * Encontra a alternativa correta
                  */
-
                 const alternativaCorreta =
                     item.questao.alternativa.find(
-                        alternativa =>
+                        (alternativa) =>
                             alternativa.alt_correta === true
                     );
 
@@ -1470,11 +1515,10 @@ export class AvaliacaoService {
                 /*
                  * Encontra a alternativa escolhida
                  */
-
                 const alternativaSelecionada =
                     respostaAluno
                         ? item.questao.alternativa.find(
-                            alternativa =>
+                            (alternativa) =>
                                 alternativa.alt_id ===
                                 respostaAluno.alt_id
                         )
@@ -1483,10 +1527,7 @@ export class AvaliacaoService {
 
                 /*
                  * Verifica se acertou
-                 *
-                 * Se não respondeu, automaticamente é false.
                  */
-
                 const correta =
                     !!respostaAluno &&
                     respostaAluno.alt_id ===
@@ -1501,7 +1542,6 @@ export class AvaliacaoService {
                     pergunta:
                         item.questao.que_texto,
 
-
                     alternativaSelecionada:
                         alternativaSelecionada
                             ? {
@@ -1514,7 +1554,6 @@ export class AvaliacaoService {
 
                             }
                             : null,
-
 
                     alternativaCorreta:
                         alternativaCorreta
@@ -1529,7 +1568,6 @@ export class AvaliacaoService {
                             }
                             : null,
 
-
                     correta,
 
                 };
@@ -1540,7 +1578,6 @@ export class AvaliacaoService {
         /*
          * Retorno utilizado pelo frontend
          */
-
         return {
 
             tentativaId:
@@ -1595,14 +1632,40 @@ export class AvaliacaoService {
 
             respostas,
 
+
+            /*
+             * Solicitação de revisão
+             */
+            solicitacaoRevisao:
+                solicitacaoRevisao
+                    ? {
+
+                        id:
+                            solicitacaoRevisao.rev_id,
+
+                        status:
+                            solicitacaoRevisao.rev_status,
+
+                        motivo:
+                            solicitacaoRevisao.rev_motivo,
+
+                        resposta:
+                            solicitacaoRevisao.rev_resposta,
+
+                        data:
+                            solicitacaoRevisao.rev_data,
+
+                        dataAnalise:
+                            solicitacaoRevisao.rev_data_analise,
+
+                    }
+                    : null,
+
         };
 
     }
 
-    async solicitarRevisao(
-        tentativaId: number,
-        usuarioId: number,
-    ) {
+    async solicitarRevisao(tentativaId: number, usuarioId: number) {
 
         const tentativa =
             await this.prisma.ten_tentativa.findUnique({
@@ -1632,9 +1695,7 @@ export class AvaliacaoService {
         /*
          * Verifica se pertence ao aluno
          */
-        if (
-            tentativa.usu_id !== usuarioId
-        ) {
+        if (tentativa.usu_id !== usuarioId) {
 
             throw new BadRequestException(
                 "Essa tentativa não pertence ao usuário."
@@ -1658,9 +1719,7 @@ export class AvaliacaoService {
         /*
          * Só pode solicitar se reprovado
          */
-        if (
-            tentativa.ten_nota >= 7.5
-        ) {
+        if (tentativa.ten_nota >= 7.5) {
 
             throw new BadRequestException(
                 "Não é possível solicitar uma nova tentativa após aprovação."
@@ -1721,6 +1780,281 @@ export class AvaliacaoService {
 
                 rev_status:
                     "PENDENTE",
+
+            },
+
+        });
+
+    }
+
+    async buscarSolicitacoesRevisaoProfessor(
+        professorId: number
+    ) {
+
+        const solicitacoes =
+            await this.prisma.rev_revisao_avaliacao.findMany({
+
+                where: {
+
+                    rev_status: "PENDENTE",
+
+                    ava_avaliacao: {
+
+                        modulo: {
+
+                            cur_curso: {
+
+                                professor_id: professorId,
+
+                            },
+
+                        },
+
+                    },
+
+                },
+
+                orderBy: {
+
+                    rev_data: "asc",
+
+                },
+
+                include: {
+
+                    usu_usuario: {
+
+                        select: {
+
+                            usu_id: true,
+                            usu_nome: true,
+                            usu_email: true,
+
+                        },
+
+                    },
+
+                    ava_avaliacao: {
+
+                        select: {
+
+                            ava_id: true,
+                            ava_titulo: true,
+
+                            modulo: {
+
+                                select: {
+
+                                    mod_id: true,
+                                    mod_titulo: true,
+
+                                    cur_curso: {
+
+                                        select: {
+
+                                            cur_id: true,
+                                            cur_titulo: true,
+
+                                        },
+
+                                    },
+
+                                },
+
+                            },
+
+                        },
+
+                    },
+
+                    ten_tentativa: {
+
+                        select: {
+
+                            ten_id: true,
+                            ten_nota: true,
+                            ten_acertos: true,
+                            ten_total_questoes: true,
+                            ten_dataInicio: true,
+                            ten_dataFim: true,
+                            ten_concluida: true,
+
+                        },
+
+                    },
+
+                },
+
+            });
+
+        return solicitacoes;
+    }
+
+    async aprovarSolicitacaoRevisao(revisaoId: number, professorId: number) {
+
+        const revisao =
+            await this.prisma.rev_revisao_avaliacao.findUnique({
+
+                where: {
+                    rev_id: revisaoId,
+                },
+
+                include: {
+
+                    ava_avaliacao: {
+
+                        include: {
+
+                            modulo: {
+
+                                include: {
+
+                                    cur_curso: true,
+
+                                },
+
+                            },
+
+                        },
+
+                    },
+
+                },
+
+            });
+
+
+        if (!revisao) {
+
+            throw new NotFoundException(
+                "Solicitação não encontrada."
+            );
+
+        }
+
+
+        /*
+         * Verifica se a solicitação
+         * pertence a um curso do professor.
+         */
+
+        if (revisao.ava_avaliacao.modulo.cur_curso.professor_id !== professorId) {
+
+            throw new BadRequestException(
+                "Você não possui permissão para analisar esta solicitação."
+            );
+
+        }
+
+
+        if (revisao.rev_status !== "PENDENTE") {
+
+            throw new BadRequestException(
+                "Esta solicitação já foi analisada."
+            );
+
+        }
+
+
+        return this.prisma.rev_revisao_avaliacao.update({
+
+            where: {
+
+                rev_id: revisaoId,
+
+            },
+
+            data: {
+
+                rev_status: "APROVADA",
+
+                rev_data_analise: new Date(),
+
+            },
+
+        });
+
+    }
+
+    async rejeitarSolicitacaoRevisao(revisaoId: number, professorId: number) {
+
+        const revisao =
+            await this.prisma.rev_revisao_avaliacao.findUnique({
+
+                where: {
+                    rev_id: revisaoId,
+                },
+
+                include: {
+
+                    ava_avaliacao: {
+
+                        include: {
+
+                            modulo: {
+
+                                include: {
+
+                                    cur_curso: true,
+
+                                },
+
+                            },
+
+                        },
+
+                    },
+
+                },
+
+            });
+
+
+        if (!revisao) {
+
+            throw new NotFoundException(
+                "Solicitação não encontrada."
+            );
+
+        }
+
+
+        /*
+         * Segurança:
+         * verifica se o professor é dono do curso.
+         */
+
+        if (revisao.ava_avaliacao.modulo.cur_curso.professor_id !== professorId) {
+
+            throw new BadRequestException(
+                "Você não possui permissão para analisar esta solicitação."
+            );
+
+        }
+
+
+        if (revisao.rev_status !== "PENDENTE") {
+
+            throw new BadRequestException(
+                "Esta solicitação já foi analisada."
+            );
+
+        }
+
+
+        return this.prisma.rev_revisao_avaliacao.update({
+
+            where: {
+
+                rev_id: revisaoId,
+
+            },
+
+            data: {
+
+                rev_status: "REJEITADA",
+
+                rev_data_analise: new Date(),
 
             },
 

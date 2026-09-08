@@ -1,10 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsInt } from 'class-validator';
-
-enum UsuStatus {
-  PENDENTE = 'PENDENTE',
-  ATIVO = 'ATIVO',
-  INATIVO = 'INATIVO',
-}
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -16,15 +17,23 @@ export class CreateUserDto {
   usu_email!: string;
 
   @IsString()
-  @MinLength(6)
+  @IsNotEmpty()
+  @MinLength(12, {
+    message: 'A senha deve possuir pelo menos 12 caracteres',
+  })
+  @MaxLength(72, {
+    message: 'A senha deve possuir no máximo 72 caracteres',
+  })
   usu_senha!: string;
 
+  @IsOptional()
   @IsString()
   usu_proposta?: string;
 
+  @IsOptional()
   @IsString()
-  usu_status?: UsuStatus;
+  usu_status?: string;
 
-  @IsInt()
-  tiu_id!: number;
+  @IsOptional()
+  tiu_id?: number;
 }
